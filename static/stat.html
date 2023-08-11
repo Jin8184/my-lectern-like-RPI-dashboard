@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="refresh" content="5">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+
+    <title>RPI info</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="longButton">
+            <button class="homeButton"; type="button"; onclick="location.href='/'">
+                STAT
+            </button>
+        </div>
+
+        <div>
+            <div class="stuff">        
+                <canvas id="temp" class="canvas"></canvas>
+                <p class="left maintext">TEMP:</p>
+                <br>
+                <p class="left subtext"; id="temp_round"></p>
+                <br>
+            </div>
+
+            <div class="stuff">        
+                <canvas id="cpu" class="canvas"></canvas>
+                <p class="left maintext">CPU:</p>
+                <br>
+                <p class="left subtext"; id="cpu_per_value"></p>
+                <br>
+            </div>
+
+            <div class="stuff">        
+                <canvas id="ram" class="canvas"></canvas>
+                <p class="left maintext">RAM:</p>
+                <br>
+                <p class="left subtext"; id="ram_per_value"></p>
+                <br>
+            </div>
+
+            <div class="stuff">
+                <canvas id="disk" class="canvas"></canvas>
+                <p class="left maintext">DISK:</p>
+                <br>
+                <p class="left subtext"; id="disk_use"></p>
+                <p class="left subtext"; id="disk_total"></p>
+                <br>
+            </div>
+        </div>
+
+        <div class="buttonbox">
+            <div class="bigassButton" float:left;>
+                <button class="actualButton"; type="button"; onclick="location.href='/todo'">
+                    TODO
+                </button>
+            </div>
+            <div class="bigassButton">
+                <button class="actualButton"; type="button"; onclick="location.href='/etc'">
+                    ETC
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+    var cpu_usage = ({{var.cpu_percent[0]}} + {{var.cpu_percent[1]}} + {{var.cpu_percent[2]}} + {{var.cpu_percent[3]}}) / 4;
+    var ram_usage = {{var.cpu_mem_percent}};
+    var rpi_temp = {{var.sensor_temperatures}};
+    var dsk_usage = {{var.disk_usage_percent}};
+
+    var dsk_GB_raw = {{var.disk_usage_used}} / 1073741824;
+    var dsk_total_raw = {{var.disk_usage_total}} / 1073741824;
+    var dsk_GB = dsk_GB_raw.toFixed(2);
+    var dsk_total = dsk_total_raw.toFixed(2);
+
+
+    function pi_chart(name_id, content) {
+
+
+
+        function percentColor(value) {
+            let color;
+            switch (true) {
+                case (value>=90):
+                    color = '#F56547';
+                    break;
+                case (value>=30):
+                    color = '#EBCD54';
+                    break;
+                case (value < 30):
+                    color = '#00bd2f';
+                    break;
+                default:
+                    color = '#F54ADD';
+            }
+
+            return color;
+        }
+
+        const canvas = document.getElementById(name_id);
+        const ct = canvas.getContext('2d');
+        canvas.height = 70;
+        canvas.width = 70;
+        var x_loc = 35
+        var center_y = canvas.height / 2;
+
+        var tem_value = 80;
+        var start_p = -90 * Math.PI/180;
+        var end_p = ((360/100) * content * Math.PI/180) + start_p;
+
+        ct.fillStyle = percentColor(content); // 색지정
+        ct.beginPath(); // Path 시작
+        ct.moveTo(x_loc,center_y); // 중심점으로 이동
+        ct.arc(x_loc, center_y, 30, start_p, end_p, false); //x, y, 반지름, 시작점, 끝점, 그리는 방향
+        ct.closePath(); // path 끝
+        ct.fill(); // 채우기
+
+        return;
+    }
+
+    function temp_gauge(name_id, temp_val) {
+
+        let temp_color;
+
+        switch (true) {
+            case (temp_val>= 60):
+                temp_color = '#fa0000';
+                break;
+            case (temp_val>= 50):
+                temp_color = '#fab300';
+                break;
+            case (temp_val>= 40):
+                temp_color = '#faed00';
+                break;
+            case (temp_val>= 30):
+                temp_color = '#00fa89';
+                break;
+            case (temp_val < 20):
+                temp_color = '#00c0fa';
+                break;
+            default:
+                temp_color = '#F54ADD';
+                break;
+        }
+
+        const canvas = document.getElementById(name_id);
+        const ct = canvas.getContext('2d');
+        canvas.height = 70;
+        canvas.width = 70;
+        var x_loc = 35
+        var center_y = canvas.height / 2;
+
+        var tem_value = 80;
+        var start_p = -90 * Math.PI/180;
+        var end_p = ((360/100) * temp_val * Math.PI/180) + start_p;
+        // var end_p = 360;
+
+        ct.fillStyle = temp_color; // 색지정
+        ct.beginPath(); // Path 시작
+        ct.moveTo(x_loc,center_y); // 중심점으로 이동
+        ct.arc(x_loc, center_y, 30, start_p, end_p, false); //x, y, 반지름, 시작점, 끝점, 그리는 방향
+        ct.closePath(); // path 끝
+        ct.fill(); // 채우기
+
+        return;
+    }
+
+    pi_chart('cpu', cpu_usage);
+    pi_chart('ram', ram_usage);
+    temp_gauge('temp', rpi_temp);
+    pi_chart('disk', dsk_usage);
+
+    document.getElementById("cpu_per_value").innerHTML = cpu_usage.toFixed(3) + '%';
+    document.getElementById("ram_per_value").innerHTML = ram_usage.toFixed(3) + '%';
+    document.getElementById("disk_use").innerHTML = dsk_GB + '/';
+    document.getElementById("disk_total").innerHTML = dsk_total + 'GB';
+    temp_display = rpi_temp.toFixed(2);
+
+    document.getElementById("temp_round").innerHTML = temp_display + '°C';
+
+</script>
+
+</html>
